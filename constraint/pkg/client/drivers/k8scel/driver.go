@@ -84,7 +84,7 @@ func (d *Driver) AddTemplate(_ context.Context, ct *templates.ConstraintTemplate
 		return err
 	}
 	vapVars = append(vapVars, vapVarsSuffix...)
-	filterCompiler, err := cel.NewCompositedCompiler(environment.MustBaseEnvSet(environment.DefaultCompatibilityVersion()))
+	filterCompiler, err := cel.NewCompositedCompiler(environment.MustBaseEnvSet(environment.DefaultCompatibilityVersion(), false))
 	if err != nil {
 		return err
 	}

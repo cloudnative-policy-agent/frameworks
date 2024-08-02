@@ -1,0 +1,203 @@
+docker buildx build . \
+	-t constraint-test \
+	--load \
+	--build-arg KUSTOMIZE_VERSION=3.8.9
+docker run --rm -v /mount/d/go/src/github.com/open-policy-agent/frameworks/constraint:/app constraint-test make native-test
+go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.14.0
+go install k8s.io/code-generator/cmd/conversion-gen@v0.29.3
+go install k8s.io/code-generator/cmd/defaulter-gen@v0.29.3
+controller-gen \
+	crd:allowDangerousTypes="true" \
+	paths="./pkg/..." \
+	output:crd:artifacts:config=config/crds
+kustomize build config/crds --output=deploy/crds.yaml
+mkdir -p .staging/templatecrd
+cp config/crds/* .staging/templatecrd
+sed -i '/- externaldata.gatekeeper.sh_providers.yaml/d' .staging/templatecrd/kustomization.yaml
+kustomize build .staging/templatecrd --output=.staging/templatecrd/crd.yaml
+test -s /app/.tmp/bin/setup-envtest || GOBIN=/app/.tmp/bin GCO_ENABLED=0 go install sigs.k8s.io/controller-runtime/tools/setup-envtest@v0.0.0-20230118154835-9241bceb3098
+KUBEBUILDER_ASSETS="/app/.tmp/bin/k8s/1.29.0-linux-amd64" \
+GO111MODULE=on \
+go test -mod vendor ./pkg/... -race -bench . -coverprofile cover.out
+	github.com/open-policy-agent/frameworks/constraint/pkg/apis		coverage: 0.0% of statements
+PASS
+coverage: 71.4% of statements
+ok  	github.com/open-policy-agent/frameworks/constraint/pkg/apis/constraints	1.081s
+?   	github.com/open-policy-agent/frameworks/constraint/pkg/apis/externaldata	[no test files]
+	github.com/open-policy-agent/frameworks/constraint/pkg/apis/externaldata/unversioned		coverage: 0.0% of statements
+PASS
+coverage: 8.4% of statements
+ok  	github.com/open-policy-agent/frameworks/constraint/pkg/apis/externaldata/v1alpha1	8.576s
+PASS
+coverage: 8.4% of statements
+ok  	github.com/open-policy-agent/frameworks/constraint/pkg/apis/externaldata/v1beta1	7.277s
+	github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates		coverage: 0.0% of statements
+PASS
+coverage: 37.1% of statements
+ok  	github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1	7.694s
+PASS
+coverage: 37.1% of statements
+ok  	github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1alpha1	7.662s
+PASS
+coverage: 37.1% of statements
+ok  	github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1	7.638s
+goos: linux
+goarch: amd64
+pkg: github.com/open-policy-agent/frameworks/constraint/pkg/client
+cpu: Intel(R) Xeon(R) Platinum 8272CL CPU @ 2.60GHz
+BenchmarkClient_AddConstraint-8            	    1906	    555581 ns/op
+BenchmarkClient_AddConstraint_Parallel/1-Templates-8         	    2156	    537253 ns/op
+BenchmarkClient_AddConstraint_Parallel/10-Templates-8        	    1924	    546652 ns/op
+BenchmarkClient_AddTemplate/Simple/1_Templates-8             	     230	   5225552 ns/op
+BenchmarkClient_AddTemplate/Simple/2_Templates-8             	     100	  10276790 ns/op
+BenchmarkClient_AddTemplate/Simple/5_Templates-8             	      45	  26474635 ns/op
+BenchmarkClient_AddTemplate/Simple/10_Templates-8            	      21	  52434953 ns/op
+BenchmarkClient_AddTemplate/Simple/20_Templates-8            	      10	 105337221 ns/op
+BenchmarkClient_AddTemplate/Simple/50_Templates-8            	       4	 265206818 ns/op
+BenchmarkClient_AddTemplate/Simple/100_Templates-8           	       2	 529993064 ns/op
+BenchmarkClient_AddTemplate/Simple/200_Templates-8           	       1	1072057314 ns/op
+BenchmarkClient_AddTemplate/Complex/1_Templates-8            	     166	   7162315 ns/op
+BenchmarkClient_AddTemplate/Complex/2_Templates-8            	      85	  14226607 ns/op
+BenchmarkClient_AddTemplate/Complex/5_Templates-8            	      31	  36170867 ns/op
+BenchmarkClient_AddTemplate/Complex/10_Templates-8           	      15	  71928200 ns/op
+BenchmarkClient_AddTemplate/Complex/20_Templates-8           	       7	 145352224 ns/op
+BenchmarkClient_AddTemplate/Complex/50_Templates-8           	       3	 362087348 ns/op
+BenchmarkClient_AddTemplate/Complex/100_Templates-8          	       2	 723334356 ns/op
+BenchmarkClient_AddTemplate/Complex/200_Templates-8          	       1	1462886083 ns/op
+BenchmarkClient_AddTemplate/Very_Complex/1_Templates-8       	      43	  27130134 ns/op
+BenchmarkClient_AddTemplate/Very_Complex/2_Templates-8       	      21	  53398439 ns/op
+BenchmarkClient_AddTemplate/Very_Complex/5_Templates-8       	       8	 140852580 ns/op
+BenchmarkClient_AddTemplate/Very_Complex/10_Templates-8      	       4	 280172514 ns/op
+BenchmarkClient_AddTemplate/Very_Complex/20_Templates-8      	       2	 539531456 ns/op
+BenchmarkClient_AddTemplate/Very_Complex/50_Templates-8      	       1	1377517923 ns/op
+BenchmarkClient_AddTemplate/Very_Complex/100_Templates-8     	       1	2761687339 ns/op
+BenchmarkClient_AddTemplate/Very_Complex/200_Templates-8     	       1	5538888274 ns/op
+BenchmarkClient_AddTemplate_Parallel/Simple/1_Templates-8    	     213	   5440897 ns/op
+BenchmarkClient_AddTemplate_Parallel/Simple/2_Templates-8    	     100	  11008441 ns/op
+BenchmarkClient_AddTemplate_Parallel/Simple/5_Templates-8    	      43	  27146646 ns/op
+BenchmarkClient_AddTemplate_Parallel/Simple/10_Templates-8   	      21	  54430213 ns/op
+BenchmarkClient_AddTemplate_Parallel/Simple/20_Templates-8   	      10	 108655328 ns/op
+BenchmarkClient_AddTemplate_Parallel/Simple/50_Templates-8   	       4	 271541310 ns/op
+BenchmarkClient_AddTemplate_Parallel/Simple/100_Templates-8  	       2	 548208584 ns/op
+BenchmarkClient_AddTemplate_Parallel/Simple/200_Templates-8  	       1	1125461059 ns/op
+BenchmarkClient_AddTemplate_Parallel/Complex/1_Templates-8   	     154	   7721940 ns/op
+BenchmarkClient_AddTemplate_Parallel/Complex/2_Templates-8   	      80	  14996324 ns/op
+BenchmarkClient_AddTemplate_Parallel/Complex/5_Templates-8   	      30	  37155388 ns/op
+BenchmarkClient_AddTemplate_Parallel/Complex/10_Templates-8  	      15	  74107070 ns/op
+BenchmarkClient_AddTemplate_Parallel/Complex/20_Templates-8  	       7	 150326514 ns/op
+BenchmarkClient_AddTemplate_Parallel/Complex/50_Templates-8  	       3	 369876285 ns/op
+BenchmarkClient_AddTemplate_Parallel/Complex/100_Templates-8 	       2	 761650765 ns/op
+BenchmarkClient_AddTemplate_Parallel/Complex/200_Templates-8 	       1	1519704914 ns/op
+BenchmarkClient_AddTemplate_Parallel/Very_Complex/1_Templates-8         	      43	  27946651 ns/op
+BenchmarkClient_AddTemplate_Parallel/Very_Complex/2_Templates-8         	      21	  55620842 ns/op
+BenchmarkClient_AddTemplate_Parallel/Very_Complex/5_Templates-8         	       8	 138829235 ns/op
+BenchmarkClient_AddTemplate_Parallel/Very_Complex/10_Templates-8        	       4	 275552912 ns/op
+BenchmarkClient_AddTemplate_Parallel/Very_Complex/20_Templates-8        	       2	 556278938 ns/op
+BenchmarkClient_AddTemplate_Parallel/Very_Complex/50_Templates-8        	       1	1387779881 ns/op
+BenchmarkClient_AddTemplate_Parallel/Very_Complex/100_Templates-8       	       1	2813927520 ns/op
+BenchmarkClient_AddTemplate_Parallel/Very_Complex/200_Templates-8       	       1	5562091295 ns/op
+BenchmarkClient_Review/1_Constraints_1_Templates_success-8              	    7624	    162640 ns/op
+BenchmarkClient_Review/1_Constraints_1_Templates_fail-8                 	    5589	    195581 ns/op
+BenchmarkClient_Review/1_Constraints_1_Templates_filtered_out-8         	  109954	      9180 ns/op
+BenchmarkClient_Review/1_Constraints_1_Templates_autoreject-8           	  138930	      8724 ns/op
+BenchmarkClient_Review/5_Constraints_1_Templates_success-8              	    4046	    288123 ns/op
+BenchmarkClient_Review/5_Constraints_1_Templates_fail-8                 	    2580	    461388 ns/op
+BenchmarkClient_Review/5_Constraints_1_Templates_filtered_out-8         	   47380	     32025 ns/op
+BenchmarkClient_Review/5_Constraints_1_Templates_autoreject-8           	   45799	     25783 ns/op
+BenchmarkClient_Review/10_Constraints_1_Templates_success-8             	    2600	    495659 ns/op
+BenchmarkClient_Review/10_Constraints_1_Templates_fail-8                	    1509	    810319 ns/op
+BenchmarkClient_Review/10_Constraints_1_Templates_filtered_out-8        	   23737	     51019 ns/op
+BenchmarkClient_Review/10_Constraints_1_Templates_autoreject-8          	   22508	     49478 ns/op
+BenchmarkClient_Review/50_Constraints_1_Templates_success-8             	     658	   2309081 ns/op
+BenchmarkClient_Review/50_Constraints_1_Templates_fail-8                	     342	   3554359 ns/op
+BenchmarkClient_Review/50_Constraints_1_Templates_filtered_out-8        	    4736	    255405 ns/op
+BenchmarkClient_Review/50_Constraints_1_Templates_autoreject-8          	    5263	    241666 ns/op
+BenchmarkClient_Review/100_Constraints_1_Templates_success-8            	     337	   3709608 ns/op
+BenchmarkClient_Review/100_Constraints_1_Templates_fail-8               	     163	   7121707 ns/op
+BenchmarkClient_Review/100_Constraints_1_Templates_filtered_out-8       	    2548	    570450 ns/op
+BenchmarkClient_Review/100_Constraints_1_Templates_autoreject-8         	    2708	    484157 ns/op
+BenchmarkClient_Review/500_Constraints_1_Templates_success-8            	      64	  18277707 ns/op
+BenchmarkClient_Review/500_Constraints_1_Templates_fail-8               	      25	  40005048 ns/op
+BenchmarkClient_Review/500_Constraints_1_Templates_filtered_out-8       	     393	   3049613 ns/op
+BenchmarkClient_Review/500_Constraints_1_Templates_autoreject-8         	     429	   2649033 ns/op
+BenchmarkClient_Review/1000_Constraints_1_Templates_success-8           	      26	  43088421 ns/op
+BenchmarkClient_Review/1000_Constraints_1_Templates_fail-8              	      10	 101261178 ns/op
+BenchmarkClient_Review/1000_Constraints_1_Templates_filtered_out-8      	     210	   5249058 ns/op
+BenchmarkClient_Review/1000_Constraints_1_Templates_autoreject-8        	     214	   5187646 ns/op
+BenchmarkClient_Review/10_Constraints_10_Templates_success-8            	     859	   1673819 ns/op
+BenchmarkClient_Review/10_Constraints_10_Templates_fail-8               	     675	   1819481 ns/op
+BenchmarkClient_Review/10_Constraints_10_Templates_filtered_out-8       	   20144	     55976 ns/op
+BenchmarkClient_Review/10_Constraints_10_Templates_autoreject-8         	   20965	     53825 ns/op
+BenchmarkClient_Review/50_Constraints_10_Templates_success-8            	     438	   2855215 ns/op
+BenchmarkClient_Review/50_Constraints_10_Templates_fail-8               	     256	   4595933 ns/op
+BenchmarkClient_Review/50_Constraints_10_Templates_filtered_out-8       	    5610	    274826 ns/op
+BenchmarkClient_Review/50_Constraints_10_Templates_autoreject-8         	    5611	    241126 ns/op
+BenchmarkClient_Review/100_Constraints_10_Templates_success-8           	     255	   4636506 ns/op
+BenchmarkClient_Review/100_Constraints_10_Templates_fail-8              	     141	   8182951 ns/op
+BenchmarkClient_Review/100_Constraints_10_Templates_filtered_out-8      	    2461	    501101 ns/op
+BenchmarkClient_Review/100_Constraints_10_Templates_autoreject-8        	    2583	    470800 ns/op
+BenchmarkClient_Review/500_Constraints_10_Templates_success-8           	      46	  23162625 ns/op
+BenchmarkClient_Review/500_Constraints_10_Templates_fail-8              	      26	  41373860 ns/op
+BenchmarkClient_Review/500_Constraints_10_Templates_filtered_out-8      	     457	   2532434 ns/op
+BenchmarkClient_Review/500_Constraints_10_Templates_autoreject-8        	     408	   2497225 ns/op
+BenchmarkClient_Review/1000_Constraints_10_Templates_success-8          	      26	  43450271 ns/op
+BenchmarkClient_Review/1000_Constraints_10_Templates_fail-8             	      14	  75097062 ns/op
+BenchmarkClient_Review/1000_Constraints_10_Templates_filtered_out-8     	     248	   4792808 ns/op
+BenchmarkClient_Review/1000_Constraints_10_Templates_autoreject-8       	     229	   4949122 ns/op
+BenchmarkClient_Review/100_Constraints_100_Templates_success-8          	      76	  14408507 ns/op
+BenchmarkClient_Review/100_Constraints_100_Templates_fail-8             	      57	  17823857 ns/op
+BenchmarkClient_Review/100_Constraints_100_Templates_filtered_out-8     	    1992	    539645 ns/op
+BenchmarkClient_Review/100_Constraints_100_Templates_autoreject-8       	    1836	    550837 ns/op
+BenchmarkClient_Review/500_Constraints_100_Templates_success-8          	      37	  33339343 ns/op
+BenchmarkClient_Review/500_Constraints_100_Templates_fail-8             	      26	  47111748 ns/op
+BenchmarkClient_Review/500_Constraints_100_Templates_filtered_out-8     	     466	   2402595 ns/op
+BenchmarkClient_Review/500_Constraints_100_Templates_autoreject-8       	     543	   2374556 ns/op
+BenchmarkClient_Review/1000_Constraints_100_Templates_success-8         	      25	  48240292 ns/op
+BenchmarkClient_Review/1000_Constraints_100_Templates_fail-8            	      13	  83231572 ns/op
+BenchmarkClient_Review/1000_Constraints_100_Templates_filtered_out-8    	     228	   4750381 ns/op
+BenchmarkClient_Review/1000_Constraints_100_Templates_autoreject-8      	     253	   4899799 ns/op
+PASS
+coverage: 75.6% of statements
+ok  	github.com/open-policy-agent/frameworks/constraint/pkg/client	213.037s
+	github.com/open-policy-agent/frameworks/constraint/pkg/client/clienttest		coverage: 0.0% of statements
+	github.com/open-policy-agent/frameworks/constraint/pkg/client/clienttest/cts		coverage: 0.0% of statements
+PASS
+coverage: 26.0% of statements
+ok  	github.com/open-policy-agent/frameworks/constraint/pkg/client/crds	1.158s
+	github.com/open-policy-agent/frameworks/constraint/pkg/client/drivers		coverage: 0.0% of statements
+	github.com/open-policy-agent/frameworks/constraint/pkg/client/drivers/fake		coverage: 0.0% of statements
+	github.com/open-policy-agent/frameworks/constraint/pkg/client/drivers/fake/schema		coverage: 0.0% of statements
+PASS
+coverage: 17.9% of statements
+ok  	github.com/open-policy-agent/frameworks/constraint/pkg/client/drivers/k8scel	1.242s
+PASS
+coverage: 19.0% of statements
+ok  	github.com/open-policy-agent/frameworks/constraint/pkg/client/drivers/k8scel/schema	1.083s
+PASS
+coverage: 30.6% of statements
+ok  	github.com/open-policy-agent/frameworks/constraint/pkg/client/drivers/k8scel/transform	4.238s
+PASS
+coverage: 54.0% of statements
+ok  	github.com/open-policy-agent/frameworks/constraint/pkg/client/drivers/rego	1.343s
+	github.com/open-policy-agent/frameworks/constraint/pkg/client/drivers/rego/schema		coverage: 0.0% of statements
+	github.com/open-policy-agent/frameworks/constraint/pkg/client/errors		coverage: 0.0% of statements
+	github.com/open-policy-agent/frameworks/constraint/pkg/client/reviews		coverage: 0.0% of statements
+PASS
+coverage: 100.0% of statements
+ok  	github.com/open-policy-agent/frameworks/constraint/pkg/core/constraints	1.020s
+	github.com/open-policy-agent/frameworks/constraint/pkg/core/templates		coverage: 0.0% of statements
+PASS
+coverage: 54.3% of statements
+ok  	github.com/open-policy-agent/frameworks/constraint/pkg/externaldata	6.035s
+	github.com/open-policy-agent/frameworks/constraint/pkg/handler		coverage: 0.0% of statements
+	github.com/open-policy-agent/frameworks/constraint/pkg/handler/handlertest		coverage: 0.0% of statements
+?   	github.com/open-policy-agent/frameworks/constraint/pkg/instrumentation	[no test files]
+PASS
+coverage: 71.3% of statements
+ok  	github.com/open-policy-agent/frameworks/constraint/pkg/regorewriter	1.076s
+PASS
+coverage: 50.0% of statements
+ok  	github.com/open-policy-agent/frameworks/constraint/pkg/schema	1.051s
+PASS
+coverage: 2.7% of statements
+ok  	github.com/open-policy-agent/frameworks/constraint/pkg/types	1.023s
